@@ -15,7 +15,7 @@ const gameBoard = (function() {
   const getBoard = () => board;
 
   const setBoard = (xPosition, yPosition, mark) => board[xPosition][yPosition] = mark;
-  
+
   const resetBoard = () => board = 
     [['', '', ''],
     ['', '', ''],
@@ -46,7 +46,12 @@ const gameController = (function() {
         console.log(`It's ${currentPlayer.name}'s turn`);
         coordinates = prompt('Enter the x and y position separated by a comma');
         coordinates = coordinates.split(',');
-        gameBoard.setBoard(coordinates[0], coordinates[1], currentPlayer.mark);
+        if (gameBoard.getBoard()[coordinates[0]][coordinates[1]] === '') {
+            gameBoard.setBoard(coordinates[0], coordinates[1], currentPlayer.mark);}
+        else {
+            console.log('Invalid move. Try again');
+            getUserTurn();
+        }
     }
 
     const gameEndController = function() {
