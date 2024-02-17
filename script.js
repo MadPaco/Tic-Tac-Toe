@@ -24,9 +24,49 @@ const gameBoard = (function() {
   return { getBoard, setBoard, resetBoard }
 })();
 
+const displayController = (function(){
+    const renderBoard = (board) => {
+        const cells = document.querySelectorAll('.cell');
+        cells.forEach(cell => {
+            const coordinates = cell.id.split(',').map(Number);
+            cell.textContent = board[coordinates[0]][coordinates[1]];
+        });
+    }
+
+    const setResult = (result) => {
+        const resultDisplay = document.querySelector('#resultDisplay');
+        resultDisplay.textContent = result;
+    }
+
+    const setCurrentPlayer = (currentPlayer) => {
+        const currentPlayerDisplay = document.querySelector('#turnDisplay');
+        currentPlayerDisplay.textContent = `${currentPlayer.name}'s turn`;
+    }
+
+
+    return { renderBoard , setResult, setCurrentPlayer}
+})();
+
+
 const gameController = (function() {
+
+    const stopGame = () => {
+        const cells = document.querySelectorAll('.cell');
+        cells.forEach(cell => {
+            cell.removeEventListener('click', handleCellClick);
+        });
+    }
+
+    const handleCellClick = (e) => {
+        const coordinates = e.target.id.split(',').map(Number);
+        handleUserTurn(coordinates);
+    }
+
     const startGame = () => {
-        gameBoard.resetBoard();
+        const cells = document.querySelectorAll('.cell');
+        cells.forEach(cell => {
+            cell.addEventListener('click', handleCellClick);
+        });
     }
     
     const getCurrentTurn = () =>{
@@ -41,16 +81,27 @@ const gameController = (function() {
         return count % 2 === 0 ? player1 : player2;
     }
 
-    const getUserTurn = () => {
+    const handleUserTurn = (coordinates) => {
         const currentPlayer = getCurrentTurn();
-        console.log(`It's ${currentPlayer.name}'s turn`);
-        coordinates = prompt('Enter the x and y position separated by a comma');
-        coordinates = coordinates.split(',');
+
         if (gameBoard.getBoard()[coordinates[0]][coordinates[1]] === '') {
-            gameBoard.setBoard(coordinates[0], coordinates[1], currentPlayer.mark);}
+            gameBoard.setBoard(coordinates[0], coordinates[1], currentPlayer.mark);
+            displayController.renderBoard(gameBoard.getBoard());
+            // Check if the game is over after each move
+            if (gameEndController().checkWinner(gameBoard.getBoard())) {
+                displayController.setResult(`${currentPlayer.name} wins!`);
+                stopGame();
+
+            } else if (gameEndController().checkDraw(gameBoard.getBoard())) {
+                displayController.setResult('Draw!');
+                stopGame();
+            }
+            else {
+                displayController.setCurrentPlayer(getCurrentTurn());
+            }
+        }
         else {
             console.log('Invalid move. Try again');
-            getUserTurn();
         }
     }
 
@@ -104,19 +155,20 @@ const gameController = (function() {
         return { checkWinner, checkDraw }
 
     }
-    return { startGame, getCurrentTurn, getUserTurn, gameEndController }
+
+    const resetGame = () => {
+        gameBoard.resetBoard();
+        displayController.renderBoard(gameBoard.getBoard());
+        displayController.setResult('');
+        displayController.setCurrentPlayer(getCurrentTurn());
+        startGame();
+    }
+
+    return { startGame, getCurrentTurn, handleUserTurn, gameEndController, resetGame }
 })();
 
 const game = (function() {
     gameController.startGame();
-
-    while (!gameController.gameEndController().checkWinner(gameBoard.getBoard()) && !gameController.gameEndController().checkDraw(gameBoard.getBoard())) {
-        const currentPlayer = gameController.getCurrentTurn();
-        (function() {gameController.getUserTurn();})();
-        console.log(gameBoard.getBoard());
-        if (gameController.gameEndController().checkWinner(gameBoard.getBoard())) {
-            console.log(`${currentPlayer.name} wins!`);
-            break;
-        }
-    }
+    const resetButton = document.querySelector('#resetButton');
+    resetButton.addEventListener('click', gameController.resetGame);
 })();
